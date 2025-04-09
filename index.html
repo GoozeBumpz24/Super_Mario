@@ -2,13 +2,14 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Geometry Dash Runner</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent; /* Prevent tap highlight on mobile */
         }
 
         body {
@@ -19,6 +20,7 @@
             align-items: center;
             height: 100vh;
             overflow: hidden;
+            touch-action: none; /* Prevent default touch behaviors like scrolling */
         }
 
         .game-container {
@@ -31,6 +33,7 @@
             position: relative;
             overflow: hidden;
             box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+            user-select: none; /* Prevent text selection on mobile */
         }
 
         .game-title {
@@ -56,6 +59,8 @@
             cursor: pointer;
             box-shadow: 0 0 15px rgba(0, 204, 255, 0.7);
             transition: all 0.3s ease;
+            z-index: 10; /* Ensure button is on top */
+            touch-action: manipulation; /* Improve touch responsiveness */
         }
 
         .play-button:hover {
@@ -114,6 +119,7 @@
             font-size: clamp(16px, 3vw, 24px); /* Responsive font size */
             opacity: 0;
             transition: opacity 0.5s;
+            z-index: 5;
         }
 
         .score {
@@ -122,6 +128,7 @@
             left: 10px;
             color: #00ffff;
             font-size: clamp(14px, 2vw, 18px); /* Responsive font size */
+            z-index: 5;
         }
 
         .game-over {
@@ -140,6 +147,7 @@
             opacity: 0;
             pointer-events: none;
             transition: opacity 0.5s;
+            z-index: 10;
         }
 
         .game-over button {
@@ -153,6 +161,7 @@
             cursor: pointer;
             box-shadow: 0 0 15px rgba(0, 204, 255, 0.7);
             transition: all 0.3s ease;
+            touch-action: manipulation; /* Improve touch responsiveness */
         }
 
         .game-over button:hover {
@@ -183,11 +192,11 @@
     <div class="game-container">
         <div class="grid"></div>
         <div class="score">Score: 0</div>
-        <div class="message">Press Space to Jump!</div>
-        <h1 class="game-title">Jeizel Mae Dash Runner</h1>
+        <div class="message">Tap or Press Space to Jump!</div>
+        <h1 class="game-title">Geometry Dash Runner</h1>
         <button class="play-button">PLAY</button>
         <div class="player">
-            <img src="player-image.jpg" alt="Player" style="border-radius: 10px;">
+            <img src="player-image.jpg" alt="Player">
         </div>
         <div class="ground"></div>
         <div class="game-over">
@@ -209,7 +218,7 @@
         let isGameRunning = false;
         let isJumping = false;
         let gravity = 0.9;
-        let positionY = 20;
+        let positionY = 20; // Player's vertical position (as a percentage from the bottom)
         let velocityY = 0;
         let score = 0;
         let obstacles = [];
@@ -219,15 +228,17 @@
         // Show initial message
         message.style.opacity = 1;
 
-        // Start the game when the play button is clicked
-        playButton.addEventListener('click', function() {
-            if (!isGameRunning) {
-                startGame();
-            }
+        // Start the game when the play button is clicked or tapped
+        playButton.addEventListener('click', startGame);
+        playButton.addEventListener('touchstart', function(e) {
+            e.preventDefault();
+            startGame();
         });
 
         // Restart the game
-        restartButton.addEventListener('click', function() {
+        restartButton.addEventListener('click', resetGame);
+        restartButton.addEventListener('touchstart', function(e) {
+            e.preventDefault();
             resetGame();
         });
 
@@ -239,14 +250,16 @@
         });
 
         // Jump on touch for mobile devices
-        gameContainer.addEventListener('touchstart', function(e) {
-            if (!isJumping && isGameRunning) {
+        document.addEventListener('touchstart', function(e) {
+            e.preventDefault();
+            if (!isGameRunning) return; // Only jump if the game is running
+            if (!isJumping) {
                 jump();
             }
-            e.preventDefault();
         });
 
         function startGame() {
+            if (isGameRunning) return; // Prevent multiple starts
             isGameRunning = true;
             playButton.style.display = 'none';
             message.style.opacity = 0;
