@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
-    <title>Jumping On My Friend's Face</title>
+    <title>Jumping On My Friend's Face Feature By Mario</title>
     <link href="https://fonts.googleapis.com/css2?family=Bubblegum+Sans&display=swap" rel="stylesheet">
     <style>
         * {
@@ -18,7 +18,7 @@
 
         body {
             font-family: 'Bubblegum Sans', cursive;
-            background: linear-gradient(to bottom, #FFB6C1, #E6E6FA); /* Pastel pink to lavender sky */
+            background: linear-gradient(to bottom, #FFB6C1, #E6E6FA);
             display: flex;
             justify-content: center;
             align-items: center;
@@ -56,7 +56,7 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: linear-gradient(to bottom, #98FB98, #32CD32); /* Pastel green gradient */
+            background: linear-gradient(to bottom, #98FB98, #32CD32);
             color: #FFF;
             padding: clamp(10px, 2vw, 15px) clamp(40px, 5vw, 80px);
             font-size: clamp(18px, 3vw, 24px);
@@ -106,6 +106,19 @@
             animation: wobble 0.5s infinite;
         }
 
+        .enemy.fast {
+            filter: hue-rotate(0deg) brightness(1.2); /* Red tint for fast enemies */
+        }
+
+        .enemy.duplicated {
+            filter: hue-rotate(200deg); /* Blue tint for duplicated enemies */
+        }
+
+        .enemy.duplicated-top {
+            bottom: calc(20% + clamp(30px, 4vw, 40px)); /* Position the duplicated enemy directly above */
+            filter: hue-rotate(200deg);
+        }
+
         @keyframes wobble {
             0%, 100% { transform: rotate(0deg); }
             25% { transform: rotate(-5deg); }
@@ -125,7 +138,7 @@
             height: 20%;
             background: url('https://www.freevector.com/uploads/vector/preview/30315/Grass_Background.jpg') repeat-x;
             background-size: 40px 40px;
-            background-color: #90EE90; /* Fallback pastel green */
+            background-color: #90EE90;
             z-index: 2;
         }
 
@@ -157,7 +170,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(255, 182, 193, 0.8); /* Pastel pink overlay */
+            background: rgba(255, 182, 193, 0.8);
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -201,6 +214,10 @@
 
             .enemy {
                 bottom: 15%;
+            }
+
+            .enemy.duplicated-top {
+                bottom: calc(15% + clamp(30px, 4vw, 40px));
             }
 
             .ground {
@@ -308,7 +325,7 @@
         function jump() {
             console.log('Jump triggered');
             isJumping = true;
-            velocityY = 15;
+            velocityY = 15; // Adjust jump height if needed for duplicated enemies
         }
 
         function updateGame() {
@@ -330,7 +347,8 @@
 
             enemies.forEach((enemy, index) => {
                 let enemyPos = parseFloat(enemy.style.right) || 0;
-                enemyPos += 0.5;
+                // Use the enemy's speed property to determine movement speed
+                enemyPos += enemy.dataset.speed || 0.5;
                 enemy.style.right = enemyPos + '%';
 
                 if (enemyPos > 100) {
@@ -338,6 +356,7 @@
                     enemies.splice(index, 1);
                 }
 
+                // Check for collision with the player
                 const playerRect = player.getBoundingClientRect();
                 const enemyRect = enemy.getBoundingClientRect();
 
@@ -356,9 +375,31 @@
             enemySpawnInterval = setInterval(() => {
                 if (!isGameRunning) return;
 
+                // Randomly decide enemy type: normal, fast, or duplicated
+                const enemyType = Math.random();
+                let isFast = false;
+                let isDuplicated = false;
+
+                if (enemyType < 0.3) {
+                    isFast = true; // 30% chance for fast enemy
+                } else if (enemyType < 0.6) {
+                    isDuplicated = true; // 30% chance for duplicated enemy
+                } // 40% chance for normal enemy
+
+                // Create the base enemy
                 const enemy = document.createElement('div');
                 enemy.classList.add('enemy');
                 enemy.style.right = '0%';
+
+                // Set enemy speed based on type
+                if (isFast) {
+                    enemy.classList.add('fast');
+                    enemy.dataset.speed = '0.8'; // Faster speed for "walking forward"
+                } else {
+                    enemy.dataset.speed = '0.5'; // Default speed
+                }
+
+                // Add the enemy image
                 const enemyImg = document.createElement('img');
                 enemyImg.src = 'enemy-image.jpg';
                 enemyImg.alt = 'Enemy';
@@ -366,7 +407,22 @@
                 enemy.appendChild(enemyImg);
                 gameContainer.appendChild(enemy);
                 enemies.push(enemy);
-            }, 2000);
+
+                // If duplicated, create a second enemy on top
+                if (isDuplicated) {
+                    const enemyTop = document.createElement('div');
+                    enemyTop.classList.add('enemy', 'duplicated-top');
+                    enemyTop.style.right = '0%';
+                    enemyTop.dataset.speed = enemy.dataset.speed; // Same speed as the base enemy
+                    const enemyTopImg = document.createElement('img');
+                    enemyTopImg.src = 'enemy-image.jpg';
+                    enemyTopImg.alt = 'Enemy';
+                    enemyTopImg.onerror = () => console.error('Failed to load enemy image');
+                    enemyTop.appendChild(enemyTopImg);
+                    gameContainer.appendChild(enemyTop);
+                    enemies.push(enemyTop);
+                }
+            }, 1500); // Reduced spawn interval to 1.5 seconds for more frequent enemies
         }
 
         function gameOver() {
