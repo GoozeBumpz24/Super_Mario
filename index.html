@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
     <title>Jumping On My Friend's Face</title>
+    <link href="https://fonts.googleapis.com/css2?family=Bubblegum+Sans&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -16,8 +17,8 @@
         }
 
         body {
-            font-family: 'Arial', sans-serif;
-            background: linear-gradient(to bottom, #87CEEB, #E0F6FF); /* Mario sky background */
+            font-family: 'Bubblegum Sans', cursive;
+            background: linear-gradient(to bottom, #FFB6C1, #E6E6FA); /* Pastel pink to lavender sky */
             display: flex;
             justify-content: center;
             align-items: center;
@@ -31,25 +32,23 @@
             max-width: 800px;
             height: 60vh;
             max-height: 450px;
-            background: url('https://www.mariowiki.com/images/9/9f/SMB_Background.png') repeat-x bottom;
-            background-size: contain;
-            border-radius: 10px;
+            background: url('https://www.freevector.com/uploads/vector/preview/30314/Clouds_Background.jpg') repeat-x bottom;
+            background-size: cover;
+            border-radius: 20px;
             position: relative;
             overflow: hidden;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
             touch-action: none;
-            z-index: 0; /* Ensure container is at the base layer */
+            z-index: 0;
         }
 
         .game-title {
             text-align: center;
-            color: #FFD700;
+            color: #FF69B4;
             font-size: clamp(24px, 5vw, 36px);
             margin-top: 10px;
-            text-shadow: 2px 2px 4px #FF4500;
-            font-weight: bold;
+            text-shadow: 2px 2px 4px #FFFACD;
             z-index: 5;
-            font-family: 'Courier New', Courier, monospace;
         }
 
         .play-button {
@@ -57,22 +56,21 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: linear-gradient(to bottom, #FF4500, #FFD700);
-            color: white;
+            background: linear-gradient(to bottom, #98FB98, #32CD32); /* Pastel green gradient */
+            color: #FFF;
             padding: clamp(10px, 2vw, 15px) clamp(40px, 5vw, 80px);
             font-size: clamp(18px, 3vw, 24px);
-            border: none;
+            border: 3px solid #FFD700;
             border-radius: 50px;
             cursor: pointer;
-            box-shadow: 0 0 15px rgba(255, 69, 0, 0.7);
+            box-shadow: 0 0 15px rgba(50, 205, 50, 0.7);
             transition: all 0.3s ease;
             z-index: 20;
             touch-action: manipulation;
-            font-family: 'Courier New', Courier, monospace;
         }
 
         .play-button:hover {
-            box-shadow: 0 0 25px rgba(255, 69, 0, 1);
+            box-shadow: 0 0 25px rgba(50, 205, 50, 1);
             transform: translate(-50%, -50%) scale(1.05);
         }
 
@@ -84,6 +82,12 @@
             height: clamp(40px, 5vw, 50px);
             transition: bottom 0.3s ease;
             z-index: 10;
+            animation: bounce 1s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
         }
 
         .player img {
@@ -99,6 +103,13 @@
             width: clamp(30px, 4vw, 40px);
             height: clamp(30px, 4vw, 40px);
             z-index: 10;
+            animation: wobble 0.5s infinite;
+        }
+
+        @keyframes wobble {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(-5deg); }
+            75% { transform: rotate(5deg); }
         }
 
         .enemy img {
@@ -111,11 +122,11 @@
             position: absolute;
             bottom: 0;
             width: 100%;
-            height: 20%; /* Ensure height is sufficient */
-            background: url('https://www.mariowiki.com/images/8/8f/SMB_Ground.png') repeat-x;
+            height: 20%;
+            background: url('https://www.freevector.com/uploads/vector/preview/30315/Grass_Background.jpg') repeat-x;
             background-size: 40px 40px;
-            background-color: #8B4513; /* Fallback color (brown) if image fails to load */
-            z-index: 2; /* Ensure ground is above the container's background but below player/enemies */
+            background-color: #90EE90; /* Fallback pastel green */
+            z-index: 2;
         }
 
         .message {
@@ -123,12 +134,11 @@
             top: 50%;
             width: 100%;
             text-align: center;
-            color: #FF4500;
+            color: #FF69B4;
             font-size: clamp(16px, 3vw, 24px);
             opacity: 0;
             transition: opacity 0.5s;
             z-index: 15;
-            font-family: 'Courier New', Courier, monospace;
         }
 
         .score {
@@ -138,7 +148,6 @@
             color: #FFD700;
             font-size: clamp(14px, 2vw, 18px);
             z-index: 15;
-            font-family: 'Courier New', Courier, monospace;
             text-shadow: 1px 1px 2px #000;
         }
 
@@ -148,38 +157,36 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.8);
+            background: rgba(255, 182, 193, 0.8); /* Pastel pink overlay */
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            color: #FF4500;
+            color: #32CD32;
             font-size: clamp(18px, 3vw, 24px);
             opacity: 0;
             pointer-events: none;
             transition: opacity 0.5s;
             z-index: 20;
-            font-family: 'Courier New', Courier, monospace;
         }
 
         .game-over button {
             margin-top: 20px;
-            background: linear-gradient(to bottom, #FF4500, #FFD700);
-            color: white;
+            background: linear-gradient(to bottom, #98FB98, #32CD32);
+            color: #FFF;
             padding: clamp(8px, 1.5vw, 10px) clamp(30px, 4vw, 40px);
             font-size: clamp(14px, 2vw, 18px);
-            border: none;
+            border: 3px solid #FFD700;
             border-radius: 50px;
             cursor: pointer;
-            box-shadow: 0 0 15px rgba(255, 69, 0, 0.7);
+            box-shadow: 0 0 15px rgba(50, 205, 50, 0.7);
             transition: all 0.3s ease;
             touch-action: manipulation;
             z-index: 25;
-            font-family: 'Courier New', Courier, monospace;
         }
 
         .game-over button:hover {
-            box-shadow: 0 0 25px rgba(255, 69, 0, 1);
+            box-shadow: 0 0 25px rgba(50, 205, 50, 1);
             transform: scale(1.05);
         }
 
@@ -206,7 +213,7 @@
     <div class="game-container">
         <div class="score">Score: 0</div>
         <div class="message">Tap or Press Space to Jump!</div>
-        <h1 class="game-title">Super Mario Runner</h1>
+        <h1 class="game-title">Jumping On My Friend's Face</h1>
         <button class="play-button">PLAY</button>
         <div class="player">
             <img src="player-image.jpg" alt="Player" onerror="console.error('Failed to load player image');">
