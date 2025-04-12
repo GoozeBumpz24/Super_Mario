@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
-    <title>Super Mario Runner</title>
+    <title>Jumping On My Friend's Face</title>
     <style>
         * {
             margin: 0;
@@ -31,13 +31,14 @@
             max-width: 800px;
             height: 60vh;
             max-height: 450px;
-            background: url('https://www.mariowiki.com/images/9/9f/SMB_Background.png') repeat-x bottom; /* Mario-style background */
+            background: url('https://www.mariowiki.com/images/9/9f/SMB_Background.png') repeat-x bottom;
             background-size: contain;
             border-radius: 10px;
             position: relative;
             overflow: hidden;
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
             touch-action: none;
+            z-index: 0; /* Ensure container is at the base layer */
         }
 
         .game-title {
@@ -48,7 +49,7 @@
             text-shadow: 2px 2px 4px #FF4500;
             font-weight: bold;
             z-index: 5;
-            font-family: 'Courier New', Courier, monospace; /* Mario-like font */
+            font-family: 'Courier New', Courier, monospace;
         }
 
         .play-button {
@@ -79,7 +80,7 @@
             position: absolute;
             bottom: 20%;
             left: 10%;
-            width: clamp(40px, 5vw, 50px); /* Slightly larger for Mario style */
+            width: clamp(40px, 5vw, 50px);
             height: clamp(40px, 5vw, 50px);
             transition: bottom 0.3s ease;
             z-index: 10;
@@ -95,7 +96,7 @@
             position: absolute;
             bottom: 20%;
             right: 0;
-            width: clamp(30px, 4vw, 40px); /* Enemy size */
+            width: clamp(30px, 4vw, 40px);
             height: clamp(30px, 4vw, 40px);
             z-index: 10;
         }
@@ -110,10 +111,11 @@
             position: absolute;
             bottom: 0;
             width: 100%;
-            height: 20%;
-            background: url('https://www.mariowiki.com/images/8/8f/SMB_Ground.png') repeat-x; /* Mario ground texture */
+            height: 20%; /* Ensure height is sufficient */
+            background: url('https://www.mariowiki.com/images/8/8f/SMB_Ground.png') repeat-x;
             background-size: 40px 40px;
-            z-index: 5;
+            background-color: #8B4513; /* Fallback color (brown) if image fails to load */
+            z-index: 2; /* Ensure ground is above the container's background but below player/enemies */
         }
 
         .message {
@@ -229,22 +231,19 @@
         let isGameRunning = false;
         let isJumping = false;
         let gravity = 0.9;
-        let positionY = 20; // Player's vertical position (as a percentage from the bottom)
+        let positionY = 20;
         let velocityY = 0;
         let score = 0;
         let enemies = [];
         let gameLoop;
         let enemySpawnInterval;
 
-        // Show initial message
         message.style.opacity = 1;
 
-        // Debug touch events
         function logTouchEvent(eventName, element) {
             console.log(`Touch event: ${eventName} on ${element}`);
         }
 
-        // Start the game when the play button is clicked or tapped
         playButton.addEventListener('click', startGame);
         playButton.addEventListener('touchstart', function(e) {
             e.preventDefault();
@@ -256,7 +255,6 @@
             logTouchEvent('touchend', 'playButton');
         });
 
-        // Restart the game
         restartButton.addEventListener('click', resetGame);
         restartButton.addEventListener('touchstart', function(e) {
             e.preventDefault();
@@ -268,18 +266,16 @@
             logTouchEvent('touchend', 'restartButton');
         });
 
-        // Jump on spacebar press
         document.addEventListener('keydown', function(e) {
             if (e.code === 'Space' && !isJumping && isGameRunning) {
                 jump();
             }
         });
 
-        // Jump on touch for mobile devices
         gameContainer.addEventListener('touchstart', function(e) {
             e.preventDefault();
             logTouchEvent('touchstart', 'gameContainer');
-            if (!isGameRunning) return; // Only jump if the game is running
+            if (!isGameRunning) return;
             if (!isJumping) {
                 jump();
             }
@@ -290,7 +286,7 @@
         });
 
         function startGame() {
-            if (isGameRunning) return; // Prevent multiple starts
+            if (isGameRunning) return;
             console.log('Game started');
             isGameRunning = true;
             playButton.style.display = 'none';
@@ -298,7 +294,6 @@
             score = 0;
             scoreDisplay.textContent = 'Score: ' + score;
 
-            // Start the game loop
             gameLoop = setInterval(updateGame, 20);
             spawnEnemies();
         }
@@ -306,43 +301,36 @@
         function jump() {
             console.log('Jump triggered');
             isJumping = true;
-            velocityY = 15; // Jump strength
+            velocityY = 15;
         }
 
         function updateGame() {
-            // Apply gravity to the player
             velocityY -= gravity;
             positionY += velocityY;
 
-            // Ground collision
             if (positionY <= 20) {
                 positionY = 20;
                 velocityY = 0;
                 isJumping = false;
             }
 
-            // Update player position
             player.style.bottom = positionY + '%';
 
-            // Update score
             if (isGameRunning) {
                 score += 1;
                 scoreDisplay.textContent = 'Score: ' + score;
             }
 
-            // Update enemies and check for collisions
             enemies.forEach((enemy, index) => {
                 let enemyPos = parseFloat(enemy.style.right) || 0;
-                enemyPos += 0.5; // Enemy speed
+                enemyPos += 0.5;
                 enemy.style.right = enemyPos + '%';
 
-                // Remove enemy if it goes off-screen
                 if (enemyPos > 100) {
                     enemy.remove();
                     enemies.splice(index, 1);
                 }
 
-                // Check for collision
                 const playerRect = player.getBoundingClientRect();
                 const enemyRect = enemy.getBoundingClientRect();
 
@@ -371,7 +359,7 @@
                 enemy.appendChild(enemyImg);
                 gameContainer.appendChild(enemy);
                 enemies.push(enemy);
-            }, 2000); // Spawn every 2 seconds
+            }, 2000);
         }
 
         function gameOver() {
