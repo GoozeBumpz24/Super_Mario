@@ -2,47 +2,53 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>If You Reach 10k You will win 50 manggoes</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+    <title>Super Mario Runner</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent; /* Prevent tap highlight on mobile */
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
         }
 
         body {
             font-family: 'Arial', sans-serif;
-            background-color: #1a1a1a;
+            background: linear-gradient(to bottom, #87CEEB, #E0F6FF); /* Mario sky background */
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
             overflow: hidden;
-            touch-action: none; /* Prevent default touch behaviors like scrolling */
+            touch-action: none;
         }
 
         .game-container {
-            width: 90vw; /* Responsive width */
+            width: 90vw;
             max-width: 800px;
-            height: 60vh; /* Responsive height */
+            height: 60vh;
             max-height: 450px;
-            background-color: #0e0e0e;
+            background: url('https://www.mariowiki.com/images/9/9f/SMB_Background.png') repeat-x bottom; /* Mario-style background */
+            background-size: contain;
             border-radius: 10px;
             position: relative;
             overflow: hidden;
-            box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
-            user-select: none; /* Prevent text selection on mobile */
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            touch-action: none;
         }
 
         .game-title {
             text-align: center;
-            color: #00ffff;
-            font-size: clamp(24px, 5vw, 36px); /* Responsive font size */
+            color: #FFD700;
+            font-size: clamp(24px, 5vw, 36px);
             margin-top: 10px;
-            text-shadow: 0 0 10px #00ffff;
+            text-shadow: 2px 2px 4px #FF4500;
             font-weight: bold;
+            z-index: 5;
+            font-family: 'Courier New', Courier, monospace; /* Mario-like font */
         }
 
         .play-button {
@@ -50,21 +56,22 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: linear-gradient(to bottom, #00ccff, #0066ff);
+            background: linear-gradient(to bottom, #FF4500, #FFD700);
             color: white;
-            padding: clamp(10px, 2vw, 15px) clamp(40px, 5vw, 80px); /* Responsive padding */
-            font-size: clamp(18px, 3vw, 24px); /* Responsive font size */
+            padding: clamp(10px, 2vw, 15px) clamp(40px, 5vw, 80px);
+            font-size: clamp(18px, 3vw, 24px);
             border: none;
             border-radius: 50px;
             cursor: pointer;
-            box-shadow: 0 0 15px rgba(0, 204, 255, 0.7);
+            box-shadow: 0 0 15px rgba(255, 69, 0, 0.7);
             transition: all 0.3s ease;
-            z-index: 10; /* Ensure button is on top */
-            touch-action: manipulation; /* Improve touch responsiveness */
+            z-index: 20;
+            touch-action: manipulation;
+            font-family: 'Courier New', Courier, monospace;
         }
 
         .play-button:hover {
-            box-shadow: 0 0 25px rgba(0, 204, 255, 1);
+            box-shadow: 0 0 25px rgba(255, 69, 0, 1);
             transform: translate(-50%, -50%) scale(1.05);
         }
 
@@ -72,24 +79,31 @@
             position: absolute;
             bottom: 20%;
             left: 10%;
-            width: clamp(30px, 5vw, 40px); /* Responsive size */
-            height: clamp(30px, 5vw, 40px);
+            width: clamp(40px, 5vw, 50px); /* Slightly larger for Mario style */
+            height: clamp(40px, 5vw, 50px);
             transition: bottom 0.3s ease;
+            z-index: 10;
         }
 
         .player img {
             width: 100%;
             height: 100%;
-            object-fit: cover;
+            object-fit: contain;
         }
 
-        .obstacle {
+        .enemy {
             position: absolute;
             bottom: 20%;
             right: 0;
-            width: clamp(15px, 2vw, 20px); /* Responsive size */
-            height: clamp(30px, 4vw, 50px);
-            background-color: #ff3366;
+            width: clamp(30px, 4vw, 40px); /* Enemy size */
+            height: clamp(30px, 4vw, 40px);
+            z-index: 10;
+        }
+
+        .enemy img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
         }
 
         .ground {
@@ -97,17 +111,9 @@
             bottom: 0;
             width: 100%;
             height: 20%;
-            background: linear-gradient(to bottom, #333333, #222222);
-        }
-
-        .grid {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            background-image: 
-                linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
-            background-size: clamp(20px, 3vw, 30px) clamp(20px, 3vw, 30px); /* Responsive grid */
+            background: url('https://www.mariowiki.com/images/8/8f/SMB_Ground.png') repeat-x; /* Mario ground texture */
+            background-size: 40px 40px;
+            z-index: 5;
         }
 
         .message {
@@ -115,20 +121,23 @@
             top: 50%;
             width: 100%;
             text-align: center;
-            color: #ff3366;
-            font-size: clamp(16px, 3vw, 24px); /* Responsive font size */
+            color: #FF4500;
+            font-size: clamp(16px, 3vw, 24px);
             opacity: 0;
             transition: opacity 0.5s;
-            z-index: 5;
+            z-index: 15;
+            font-family: 'Courier New', Courier, monospace;
         }
 
         .score {
             position: absolute;
             top: 10px;
             left: 10px;
-            color: #00ffff;
-            font-size: clamp(14px, 2vw, 18px); /* Responsive font size */
-            z-index: 5;
+            color: #FFD700;
+            font-size: clamp(14px, 2vw, 18px);
+            z-index: 15;
+            font-family: 'Courier New', Courier, monospace;
+            text-shadow: 1px 1px 2px #000;
         }
 
         .game-over {
@@ -142,30 +151,33 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            color: #ff3366;
-            font-size: clamp(18px, 3vw, 24px); /* Responsive font size */
+            color: #FF4500;
+            font-size: clamp(18px, 3vw, 24px);
             opacity: 0;
             pointer-events: none;
             transition: opacity 0.5s;
-            z-index: 10;
+            z-index: 20;
+            font-family: 'Courier New', Courier, monospace;
         }
 
         .game-over button {
             margin-top: 20px;
-            background: linear-gradient(to bottom, #00ccff, #0066ff);
+            background: linear-gradient(to bottom, #FF4500, #FFD700);
             color: white;
-            padding: clamp(8px, 1.5vw, 10px) clamp(30px, 4vw, 40px); /* Responsive padding */
-            font-size: clamp(14px, 2vw, 18px); /* Responsive font size */
+            padding: clamp(8px, 1.5vw, 10px) clamp(30px, 4vw, 40px);
+            font-size: clamp(14px, 2vw, 18px);
             border: none;
             border-radius: 50px;
             cursor: pointer;
-            box-shadow: 0 0 15px rgba(0, 204, 255, 0.7);
+            box-shadow: 0 0 15px rgba(255, 69, 0, 0.7);
             transition: all 0.3s ease;
-            touch-action: manipulation; /* Improve touch responsiveness */
+            touch-action: manipulation;
+            z-index: 25;
+            font-family: 'Courier New', Courier, monospace;
         }
 
         .game-over button:hover {
-            box-shadow: 0 0 25px rgba(0, 204, 255, 1);
+            box-shadow: 0 0 25px rgba(255, 69, 0, 1);
             transform: scale(1.05);
         }
 
@@ -178,7 +190,7 @@
                 bottom: 15%;
             }
 
-            .obstacle {
+            .enemy {
                 bottom: 15%;
             }
 
@@ -190,13 +202,12 @@
 </head>
 <body>
     <div class="game-container">
-        <div class="grid"></div>
         <div class="score">Score: 0</div>
         <div class="message">Tap or Press Space to Jump!</div>
-        <h1 class="game-title">If You Reach 10k You will get 50 manggoes</h1>
+        <h1 class="game-title">Super Mario Runner</h1>
         <button class="play-button">PLAY</button>
         <div class="player">
-            <img src="player-image.jpg" alt="Player">
+            <img src="player-image.jpg" alt="Player" onerror="console.error('Failed to load player image');">
         </div>
         <div class="ground"></div>
         <div class="game-over">
@@ -221,25 +232,40 @@
         let positionY = 20; // Player's vertical position (as a percentage from the bottom)
         let velocityY = 0;
         let score = 0;
-        let obstacles = [];
+        let enemies = [];
         let gameLoop;
-        let obstacleSpawnInterval;
+        let enemySpawnInterval;
 
         // Show initial message
         message.style.opacity = 1;
+
+        // Debug touch events
+        function logTouchEvent(eventName, element) {
+            console.log(`Touch event: ${eventName} on ${element}`);
+        }
 
         // Start the game when the play button is clicked or tapped
         playButton.addEventListener('click', startGame);
         playButton.addEventListener('touchstart', function(e) {
             e.preventDefault();
+            logTouchEvent('touchstart', 'playButton');
             startGame();
+        });
+        playButton.addEventListener('touchend', function(e) {
+            e.preventDefault();
+            logTouchEvent('touchend', 'playButton');
         });
 
         // Restart the game
         restartButton.addEventListener('click', resetGame);
         restartButton.addEventListener('touchstart', function(e) {
             e.preventDefault();
+            logTouchEvent('touchstart', 'restartButton');
             resetGame();
+        });
+        restartButton.addEventListener('touchend', function(e) {
+            e.preventDefault();
+            logTouchEvent('touchend', 'restartButton');
         });
 
         // Jump on spacebar press
@@ -250,16 +276,22 @@
         });
 
         // Jump on touch for mobile devices
-        document.addEventListener('touchstart', function(e) {
+        gameContainer.addEventListener('touchstart', function(e) {
             e.preventDefault();
+            logTouchEvent('touchstart', 'gameContainer');
             if (!isGameRunning) return; // Only jump if the game is running
             if (!isJumping) {
                 jump();
             }
         });
+        gameContainer.addEventListener('touchend', function(e) {
+            e.preventDefault();
+            logTouchEvent('touchend', 'gameContainer');
+        });
 
         function startGame() {
             if (isGameRunning) return; // Prevent multiple starts
+            console.log('Game started');
             isGameRunning = true;
             playButton.style.display = 'none';
             message.style.opacity = 0;
@@ -268,10 +300,11 @@
 
             // Start the game loop
             gameLoop = setInterval(updateGame, 20);
-            spawnObstacles();
+            spawnEnemies();
         }
 
         function jump() {
+            console.log('Jump triggered');
             isJumping = true;
             velocityY = 15; // Jump strength
         }
@@ -297,65 +330,72 @@
                 scoreDisplay.textContent = 'Score: ' + score;
             }
 
-            // Update obstacles and check for collisions
-            obstacles.forEach((obstacle, index) => {
-                let obstaclePos = parseFloat(obstacle.style.right) || 0;
-                obstaclePos += 0.5; // Obstacle speed
-                obstacle.style.right = obstaclePos + '%';
+            // Update enemies and check for collisions
+            enemies.forEach((enemy, index) => {
+                let enemyPos = parseFloat(enemy.style.right) || 0;
+                enemyPos += 0.5; // Enemy speed
+                enemy.style.right = enemyPos + '%';
 
-                // Remove obstacle if it goes off-screen
-                if (obstaclePos > 100) {
-                    obstacle.remove();
-                    obstacles.splice(index, 1);
+                // Remove enemy if it goes off-screen
+                if (enemyPos > 100) {
+                    enemy.remove();
+                    enemies.splice(index, 1);
                 }
 
                 // Check for collision
                 const playerRect = player.getBoundingClientRect();
-                const obstacleRect = obstacle.getBoundingClientRect();
+                const enemyRect = enemy.getBoundingClientRect();
 
                 if (
-                    playerRect.left < obstacleRect.right &&
-                    playerRect.right > obstacleRect.left &&
-                    playerRect.top < obstacleRect.bottom &&
-                    playerRect.bottom > obstacleRect.top
+                    playerRect.left < enemyRect.right &&
+                    playerRect.right > enemyRect.left &&
+                    playerRect.top < enemyRect.bottom &&
+                    playerRect.bottom > enemyRect.top
                 ) {
                     gameOver();
                 }
             });
         }
 
-        function spawnObstacles() {
-            obstacleSpawnInterval = setInterval(() => {
+        function spawnEnemies() {
+            enemySpawnInterval = setInterval(() => {
                 if (!isGameRunning) return;
 
-                const obstacle = document.createElement('div');
-                obstacle.classList.add('obstacle');
-                obstacle.style.right = '0%';
-                gameContainer.appendChild(obstacle);
-                obstacles.push(obstacle);
+                const enemy = document.createElement('div');
+                enemy.classList.add('enemy');
+                enemy.style.right = '0%';
+                const enemyImg = document.createElement('img');
+                enemyImg.src = 'enemy-image.jpg';
+                enemyImg.alt = 'Enemy';
+                enemyImg.onerror = () => console.error('Failed to load enemy image');
+                enemy.appendChild(enemyImg);
+                gameContainer.appendChild(enemy);
+                enemies.push(enemy);
             }, 2000); // Spawn every 2 seconds
         }
 
         function gameOver() {
+            console.log('Game over');
             isGameRunning = false;
             clearInterval(gameLoop);
-            clearInterval(obstacleSpawnInterval);
+            clearInterval(enemySpawnInterval);
             gameOverScreen.style.opacity = 1;
             gameOverScreen.style.pointerEvents = 'auto';
             finalScoreDisplay.textContent = score;
         }
 
         function resetGame() {
+            console.log('Game reset');
             isGameRunning = false;
             clearInterval(gameLoop);
-            clearInterval(obstacleSpawnInterval);
+            clearInterval(enemySpawnInterval);
             gameOverScreen.style.opacity = 0;
             gameOverScreen.style.pointerEvents = 'none';
             positionY = 20;
             velocityY = 0;
             player.style.bottom = positionY + '%';
-            obstacles.forEach(obstacle => obstacle.remove());
-            obstacles = [];
+            enemies.forEach(enemy => enemy.remove());
+            enemies = [];
             playButton.style.display = 'block';
             score = 0;
             scoreDisplay.textContent = 'Score: ' + score;
