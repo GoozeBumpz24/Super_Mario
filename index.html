@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
-    <title>Jumping On My Friend's Face Feature By Mario</title>
+    <title>Jumping On My Friend's Face</title>
     <link href="https://fonts.googleapis.com/css2?family=Bubblegum+Sans&display=swap" rel="stylesheet">
     <style>
         * {
@@ -32,8 +32,7 @@
             max-width: 800px;
             height: 60vh;
             max-height: 450px;
-            background: url('https://www.freevector.com/uploads/vector/preview/30314/Clouds_Background.jpg') repeat-x bottom;
-            background-size: cover;
+            background: linear-gradient(to bottom, #87CEEB, #E0F6FF); /* Fallback sky gradient */
             border-radius: 20px;
             position: relative;
             overflow: hidden;
@@ -107,15 +106,15 @@
         }
 
         .enemy.fast {
-            filter: hue-rotate(0deg) brightness(1.2); /* Red tint for fast enemies */
+            filter: hue-rotate(0deg) brightness(1.2);
         }
 
         .enemy.duplicated {
-            filter: hue-rotate(200deg); /* Blue tint for duplicated enemies */
+            filter: hue-rotate(200deg);
         }
 
         .enemy.duplicated-top {
-            bottom: calc(20% + clamp(30px, 4vw, 40px)); /* Position the duplicated enemy directly above */
+            bottom: calc(20% + clamp(30px, 4vw, 40px));
             filter: hue-rotate(200deg);
         }
 
@@ -136,9 +135,8 @@
             bottom: 0;
             width: 100%;
             height: 20%;
-            background: url('https://www.freevector.com/uploads/vector/preview/30315/Grass_Background.jpg') repeat-x;
+            background: linear-gradient(to bottom, #90EE90, #7CFC00); /* Fallback grass gradient */
             background-size: 40px 40px;
-            background-color: #90EE90;
             z-index: 2;
         }
 
@@ -325,7 +323,7 @@
         function jump() {
             console.log('Jump triggered');
             isJumping = true;
-            velocityY = 15; // Adjust jump height if needed for duplicated enemies
+            velocityY = 15;
         }
 
         function updateGame() {
@@ -347,8 +345,7 @@
 
             enemies.forEach((enemy, index) => {
                 let enemyPos = parseFloat(enemy.style.right) || 0;
-                // Use the enemy's speed property to determine movement speed
-                enemyPos += enemy.dataset.speed || 0.5;
+                enemyPos += parseFloat(enemy.dataset.speed) || 0.5;
                 enemy.style.right = enemyPos + '%';
 
                 if (enemyPos > 100) {
@@ -356,7 +353,6 @@
                     enemies.splice(index, 1);
                 }
 
-                // Check for collision with the player
                 const playerRect = player.getBoundingClientRect();
                 const enemyRect = enemy.getBoundingClientRect();
 
@@ -375,31 +371,29 @@
             enemySpawnInterval = setInterval(() => {
                 if (!isGameRunning) return;
 
-                // Randomly decide enemy type: normal, fast, or duplicated
                 const enemyType = Math.random();
                 let isFast = false;
                 let isDuplicated = false;
 
                 if (enemyType < 0.3) {
-                    isFast = true; // 30% chance for fast enemy
+                    isFast = true;
                 } else if (enemyType < 0.6) {
-                    isDuplicated = true; // 30% chance for duplicated enemy
-                } // 40% chance for normal enemy
+                    isDuplicated = true;
+                }
 
-                // Create the base enemy
                 const enemy = document.createElement('div');
                 enemy.classList.add('enemy');
                 enemy.style.right = '0%';
 
-                // Set enemy speed based on type
                 if (isFast) {
                     enemy.classList.add('fast');
-                    enemy.dataset.speed = '0.8'; // Faster speed for "walking forward"
+                    enemy.dataset.speed = '0.8';
+                    console.log('Spawned fast enemy');
                 } else {
-                    enemy.dataset.speed = '0.5'; // Default speed
+                    enemy.dataset.speed = '0.5';
+                    console.log('Spawned normal enemy');
                 }
 
-                // Add the enemy image
                 const enemyImg = document.createElement('img');
                 enemyImg.src = 'enemy-image.jpg';
                 enemyImg.alt = 'Enemy';
@@ -408,12 +402,11 @@
                 gameContainer.appendChild(enemy);
                 enemies.push(enemy);
 
-                // If duplicated, create a second enemy on top
                 if (isDuplicated) {
                     const enemyTop = document.createElement('div');
                     enemyTop.classList.add('enemy', 'duplicated-top');
                     enemyTop.style.right = '0%';
-                    enemyTop.dataset.speed = enemy.dataset.speed; // Same speed as the base enemy
+                    enemyTop.dataset.speed = enemy.dataset.speed;
                     const enemyTopImg = document.createElement('img');
                     enemyTopImg.src = 'enemy-image.jpg';
                     enemyTopImg.alt = 'Enemy';
@@ -421,8 +414,9 @@
                     enemyTop.appendChild(enemyTopImg);
                     gameContainer.appendChild(enemyTop);
                     enemies.push(enemyTop);
+                    console.log('Spawned duplicated enemy');
                 }
-            }, 1500); // Reduced spawn interval to 1.5 seconds for more frequent enemies
+            }, 1500);
         }
 
         function gameOver() {
