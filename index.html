@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
-    <title>Jumping On My Friend's Face</title>
+    <title>Jumping On My Cutie Face</title>
     <link href="https://fonts.googleapis.com/css2?family=Bubblegum+Sans&display=swap" rel="stylesheet">
     <style>
         * {
@@ -32,7 +32,7 @@
             max-width: 800px;
             height: 60vh;
             max-height: 450px;
-            background: linear-gradient(to bottom, #87CEEB, #E0F6FF); /* Fallback sky gradient */
+            background: linear-gradient(to bottom, #87CEEB, #E0F6FF);
             border-radius: 20px;
             position: relative;
             overflow: hidden;
@@ -77,8 +77,8 @@
             position: absolute;
             bottom: 20%;
             left: 10%;
-            width: clamp(40px, 5vw, 50px);
-            height: clamp(40px, 5vw, 50px);
+            width: clamp(60px, 7vw, 80px); /* Increased size */
+            height: clamp(60px, 7vw, 80px); /* Increased size */
             transition: bottom 0.3s ease;
             z-index: 10;
             animation: bounce 1s infinite;
@@ -99,8 +99,8 @@
             position: absolute;
             bottom: 20%;
             right: 0;
-            width: clamp(30px, 4vw, 40px);
-            height: clamp(30px, 4vw, 40px);
+            width: clamp(50px, 6vw, 70px); /* Increased size */
+            height: clamp(50px, 6vw, 70px); /* Increased size */
             z-index: 10;
             animation: wobble 0.5s infinite;
         }
@@ -114,7 +114,7 @@
         }
 
         .enemy.duplicated-top {
-            bottom: calc(20% + clamp(30px, 4vw, 40px));
+            bottom: calc(20% + clamp(50px, 6vw, 70px)); /* Adjusted for larger enemy size */
             filter: hue-rotate(200deg);
         }
 
@@ -135,7 +135,7 @@
             bottom: 0;
             width: 100%;
             height: 20%;
-            background: linear-gradient(to bottom, #90EE90, #7CFC00); /* Fallback grass gradient */
+            background: linear-gradient(to bottom, #90EE90, #7CFC00);
             background-size: 40px 40px;
             z-index: 2;
         }
@@ -215,7 +215,7 @@
             }
 
             .enemy.duplicated-top {
-                bottom: calc(15% + clamp(30px, 4vw, 40px));
+                bottom: calc(15% + clamp(50px, 6vw, 70px)); /* Adjusted for larger enemy size */
             }
 
             .ground {
@@ -228,7 +228,7 @@
     <div class="game-container">
         <div class="score">Score: 0</div>
         <div class="message">Tap or Press Space to Jump!</div>
-        <h1 class="game-title">Jumping On My Friend's Face</h1>
+        <h1 class="game-title">Jumping On My Cutie Face, If you lose you sing...</h1>
         <button class="play-button">PLAY</button>
         <div class="player">
             <img src="player-image.jpg" alt="Player" onerror="console.error('Failed to load player image');">
