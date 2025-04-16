@@ -2,450 +2,566 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
-    <title>Jumping On My Cutie Face</title>
-    <link href="https://fonts.googleapis.com/css2?family=Bubblegum+Sans&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mario-Inspired Platformer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-            -webkit-touch-callout: none;
-            -webkit-user-select: none;
-            user-select: none;
-        }
-
         body {
-            font-family: 'Bubblegum Sans', cursive;
-            background: linear-gradient(to bottom, #FFB6C1, #E6E6FA);
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            margin: 0;
+            overflow: hidden;
+            background: linear-gradient(to bottom, #87CEEB 0%, #E0F7FA 100%);
+            font-family: 'Press Start 2P', cursive;
+        }
+        
+        #game-container {
+            position: relative;
+            width: 100vw;
             height: 100vh;
             overflow: hidden;
-            touch-action: none;
         }
-
-        .game-container {
-            width: 90vw;
-            max-width: 800px;
-            height: 60vh;
-            max-height: 450px;
-            background: linear-gradient(to bottom, #87CEEB, #E0F6FF);
-            border-radius: 20px;
-            position: relative;
-            overflow: hidden;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
-            touch-action: none;
-            z-index: 0;
+        
+        #game-canvas {
+            display: block;
+            background-color: transparent;
         }
-
-        .game-title {
-            text-align: center;
-            color: #FF69B4;
-            font-size: clamp(24px, 5vw, 36px);
-            margin-top: 10px;
-            text-shadow: 2px 2px 4px #FFFACD;
-            z-index: 5;
-        }
-
-        .play-button {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: linear-gradient(to bottom, #98FB98, #32CD32);
-            color: #FFF;
-            padding: clamp(10px, 2vw, 15px) clamp(40px, 5vw, 80px);
-            font-size: clamp(18px, 3vw, 24px);
-            border: 3px solid #FFD700;
-            border-radius: 50px;
-            cursor: pointer;
-            box-shadow: 0 0 15px rgba(50, 205, 50, 0.7);
-            transition: all 0.3s ease;
-            z-index: 20;
-            touch-action: manipulation;
-        }
-
-        .play-button:hover {
-            box-shadow: 0 0 25px rgba(50, 205, 50, 1);
-            transform: translate(-50%, -50%) scale(1.05);
-        }
-
-        .player {
-            position: absolute;
-            bottom: 20%;
-            left: 10%;
-            width: clamp(60px, 7vw, 80px); /* Increased size */
-            height: clamp(60px, 7vw, 80px); /* Increased size */
-            transition: bottom 0.3s ease;
-            z-index: 10;
-            animation: bounce 1s infinite;
-        }
-
-        @keyframes bounce {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-10px); }
-        }
-
-        .player img {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-        }
-
-        .enemy {
-            position: absolute;
-            bottom: 20%;
-            right: 0;
-            width: clamp(50px, 6vw, 70px); /* Increased size */
-            height: clamp(50px, 6vw, 70px); /* Increased size */
-            z-index: 10;
-            animation: wobble 0.5s infinite;
-        }
-
-        .enemy.fast {
-            filter: hue-rotate(0deg) brightness(1.2);
-        }
-
-        .enemy.duplicated {
-            filter: hue-rotate(200deg);
-        }
-
-        .enemy.duplicated-top {
-            bottom: calc(20% + clamp(50px, 6vw, 70px)); /* Adjusted for larger enemy size */
-            filter: hue-rotate(200deg);
-        }
-
-        @keyframes wobble {
-            0%, 100% { transform: rotate(0deg); }
-            25% { transform: rotate(-5deg); }
-            75% { transform: rotate(5deg); }
-        }
-
-        .enemy img {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-        }
-
-        .ground {
+        
+        #ground {
             position: absolute;
             bottom: 0;
             width: 100%;
-            height: 20%;
-            background: linear-gradient(to bottom, #90EE90, #7CFC00);
-            background-size: 40px 40px;
-            z-index: 2;
+            height: 60px;
+            background: linear-gradient(to bottom, #4CAF50 0%, #2E7D32 100%);
         }
-
-        .message {
-            position: absolute;
-            top: 50%;
-            width: 100%;
-            text-align: center;
-            color: #FF69B4;
-            font-size: clamp(16px, 3vw, 24px);
-            opacity: 0;
-            transition: opacity 0.5s;
-            z-index: 15;
-        }
-
-        .score {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            color: #FFD700;
-            font-size: clamp(14px, 2vw, 18px);
-            z-index: 15;
-            text-shadow: 1px 1px 2px #000;
-        }
-
-        .game-over {
+        
+        #start-screen, #game-over-screen {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(255, 182, 193, 0.8);
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            color: #32CD32;
-            font-size: clamp(18px, 3vw, 24px);
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.5s;
-            z-index: 20;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            z-index: 10;
         }
-
-        .game-over button {
+        
+        #game-over-screen {
+            display: none;
+        }
+        
+        .btn {
             margin-top: 20px;
-            background: linear-gradient(to bottom, #98FB98, #32CD32);
-            color: #FFF;
-            padding: clamp(8px, 1.5vw, 10px) clamp(30px, 4vw, 40px);
-            font-size: clamp(14px, 2vw, 18px);
-            border: 3px solid #FFD700;
-            border-radius: 50px;
+            padding: 10px 20px;
+            background: #FF5722;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-family: 'Press Start 2P', cursive;
             cursor: pointer;
-            box-shadow: 0 0 15px rgba(50, 205, 50, 0.7);
-            transition: all 0.3s ease;
-            touch-action: manipulation;
-            z-index: 25;
+            transition: all 0.3s;
         }
-
-        .game-over button:hover {
-            box-shadow: 0 0 25px rgba(50, 205, 50, 1);
+        
+        .btn:hover {
+            background: #E64A19;
             transform: scale(1.05);
         }
-
-        @media (max-width: 600px) {
-            .game-container {
-                height: 50vh;
-            }
-
-            .player {
-                bottom: 15%;
-            }
-
-            .enemy {
-                bottom: 15%;
-            }
-
-            .enemy.duplicated-top {
-                bottom: calc(15% + clamp(50px, 6vw, 70px)); /* Adjusted for larger enemy size */
-            }
-
-            .ground {
-                height: 15%;
-            }
+        
+        #score-display {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            font-size: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            z-index: 5;
+        }
+        
+        .platform {
+            position: absolute;
+            background: linear-gradient(to bottom, #8D6E63 0%, #5D4037 100%);
+            border-radius: 5px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+        
+        .coin {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: radial-gradient(circle at 30% 30%, #FFD700 0%, #FF9800 70%);
+            border-radius: 50%;
+            box-shadow: 0 0 10px #FFD700;
+            z-index: 2;
+        }
+        
+        .enemy {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background: url('enemy-image.jpg') no-repeat center center;
+            background-size: contain;
+            z-index: 2;
+        }
+        
+        .spike {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: #666;
+            clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+            z-index: 2;
+        }
+        
+        #player {
+            position: absolute;
+            width: 40px;
+            height: 60px;
+            background: url('handsome24.jpg') no-repeat center center;
+            background-size: contain;
+            z-index: 3;
+            transition: transform 0.1s;
+        }
+        
+        #player.jump {
+            animation: jump 0.5s ease-out;
+        }
+        
+        @keyframes jump {
+            0% { transform: translateY(0); }
+            50% { transform: translateY(-100px); }
+            100% { transform: translateY(0); }
+        }
+        
+        .cloud {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            opacity: 0.8;
+        }
+        
+        @font-face {
+            font-family: 'Press Start 2P';
+            src: url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
         }
     </style>
 </head>
 <body>
-    <div class="game-container">
-        <div class="score">Score: 0</div>
-        <div class="message">Tap or Press Space to Jump!</div>
-        <h1 class="game-title">Jumping On My Cutie Face, If you lose you sing...</h1>
-        <button class="play-button">PLAY</button>
-        <div class="player">
-            <img src="player-image.jpg" alt="Player" onerror="console.error('Failed to load player image');">
+    <div id="game-container">
+        <div id="ground"></div>
+        <div id="player"></div>
+        <div id="score-display">Score: 0</div>
+        
+        <div id="start-screen">
+            <h1 class="text-4xl mb-8">Jeizel is the Enemy</h1>
+            <p class="mb-4">Use arrow keys to move</p>
+            <p class="mb-8">Space to jump</p>
+            <button id="start-btn" class="btn">Start Game</button>
         </div>
-        <div class="ground"></div>
-        <div class="game-over">
-            <div>Game Over! Score: <span class="final-score">0</span></div>
-            <button class="restart-button">Restart</button>
+        
+        <div id="game-over-screen">
+            <h1 class="text-4xl mb-8">Game Over</h1>
+            <p id="final-score" class="mb-8">Score: 0</p>
+            <button id="restart-btn" class="btn">Play Again</button>
         </div>
     </div>
 
     <script>
-        const playButton = document.querySelector('.play-button');
-        const player = document.querySelector('.player');
-        const message = document.querySelector('.message');
-        const scoreDisplay = document.querySelector('.score');
-        const gameOverScreen = document.querySelector('.game-over');
-        const finalScoreDisplay = document.querySelector('.final-score');
-        const restartButton = document.querySelector('.restart-button');
-        const gameContainer = document.querySelector('.game-container');
-
-        let isGameRunning = false;
-        let isJumping = false;
-        let gravity = 0.9;
-        let positionY = 20;
-        let velocityY = 0;
-        let score = 0;
+        // Game variables
+        let player;
+        let platforms = [];
+        let coins = [];
         let enemies = [];
-        let gameLoop;
-        let enemySpawnInterval;
-
-        message.style.opacity = 1;
-
-        function logTouchEvent(eventName, element) {
-            console.log(`Touch event: ${eventName} on ${element}`);
-        }
-
-        playButton.addEventListener('click', startGame);
-        playButton.addEventListener('touchstart', function(e) {
-            e.preventDefault();
-            logTouchEvent('touchstart', 'playButton');
-            startGame();
-        });
-        playButton.addEventListener('touchend', function(e) {
-            e.preventDefault();
-            logTouchEvent('touchend', 'playButton');
-        });
-
-        restartButton.addEventListener('click', resetGame);
-        restartButton.addEventListener('touchstart', function(e) {
-            e.preventDefault();
-            logTouchEvent('touchstart', 'restartButton');
-            resetGame();
-        });
-        restartButton.addEventListener('touchend', function(e) {
-            e.preventDefault();
-            logTouchEvent('touchend', 'restartButton');
-        });
-
-        document.addEventListener('keydown', function(e) {
-            if (e.code === 'Space' && !isJumping && isGameRunning) {
-                jump();
-            }
-        });
-
-        gameContainer.addEventListener('touchstart', function(e) {
-            e.preventDefault();
-            logTouchEvent('touchstart', 'gameContainer');
-            if (!isGameRunning) return;
-            if (!isJumping) {
-                jump();
-            }
-        });
-        gameContainer.addEventListener('touchend', function(e) {
-            e.preventDefault();
-            logTouchEvent('touchend', 'gameContainer');
-        });
-
-        function startGame() {
-            if (isGameRunning) return;
-            console.log('Game started');
-            isGameRunning = true;
-            playButton.style.display = 'none';
-            message.style.opacity = 0;
+        let spikes = [];
+        let clouds = [];
+        let score = 0;
+        let gameSpeed = 4;
+        let isJumping = false;
+        let gameRunning = false;
+        let gameInterval;
+        let spawnInterval;
+        let cloudInterval;
+        
+        // DOM elements
+        const gameContainer = document.getElementById('game-container');
+        const playerElement = document.getElementById('player');
+        const ground = document.getElementById('ground');
+        const scoreDisplay = document.getElementById('score-display');
+        const startScreen = document.getElementById('start-screen');
+        const gameOverScreen = document.getElementById('game-over-screen');
+        const finalScoreDisplay = document.getElementById('final-score');
+        const startBtn = document.getElementById('start-btn');
+        const restartBtn = document.getElementById('restart-btn');
+        
+        // Player object
+        player = {
+            x: 100,
+            y: window.innerHeight - 60 - 60,
+            width: 40,
+            height: 60,
+            velocityX: 0,
+            velocityY: 0,
+            gravity: 1,
+            jumpForce: -15,
+            speed: 5,
+            isOnGround: false
+        };
+        
+        // Initialize game
+        function initGame() {
+            platforms.forEach(platform => platform.remove());
+            coins.forEach(coin => coin.remove());
+            enemies.forEach(enemy => enemy.remove());
+            spikes.forEach(spike => spike.remove());
+            clouds.forEach(cloud => cloud.remove());
+            
+            platforms = [];
+            coins = [];
+            enemies = [];
+            spikes = [];
+            clouds = [];
+            
+            player.x = 100;
+            player.y = window.innerHeight - 60 - 60;
+            player.velocityX = 0;
+            player.velocityY = 0;
+            player.isOnGround = false;
+            
             score = 0;
-            scoreDisplay.textContent = 'Score: ' + score;
-
-            gameLoop = setInterval(updateGame, 20);
-            spawnEnemies();
+            gameSpeed = 4;
+            updateScore();
+            
+            createPlatform(0, window.innerHeight - 60, window.innerWidth, 60);
+            
+            for (let i = 0; i < 5; i++) {
+                createCloud();
+            }
+            
+            gameRunning = true;
+            gameInterval = setInterval(updateGame, 20);
+            spawnInterval = setInterval(spawnElements, 1500);
+            cloudInterval = setInterval(createCloud, 5000);
         }
-
-        function jump() {
-            console.log('Jump triggered');
-            isJumping = true;
-            velocityY = 15;
-        }
-
+        
+        // Update game state
         function updateGame() {
-            velocityY -= gravity;
-            positionY += velocityY;
-
-            if (positionY <= 20) {
-                positionY = 20;
-                velocityY = 0;
-                isJumping = false;
+            player.velocityY += player.gravity;
+            player.x += player.velocityX;
+            player.y += player.velocityY;
+            
+            // Ground collision
+            if (player.y + player.height > window.innerHeight - 60) {
+                player.y = window.innerHeight - 60 - player.height;
+                player.velocityY = 0;
+                player.isOnGround = true;
             }
-
-            player.style.bottom = positionY + '%';
-
-            if (isGameRunning) {
-                score += 1;
-                scoreDisplay.textContent = 'Score: ' + score;
-            }
-
-            enemies.forEach((enemy, index) => {
-                let enemyPos = parseFloat(enemy.style.right) || 0;
-                enemyPos += parseFloat(enemy.dataset.speed) || 0.5;
-                enemy.style.right = enemyPos + '%';
-
-                if (enemyPos > 100) {
-                    enemy.remove();
-                    enemies.splice(index, 1);
+            
+            // Platform collisions
+            platforms.forEach(platform => {
+                if (platform !== ground) {
+                    const platformRect = platform.getBoundingClientRect();
+                    const playerRect = {
+                        left: player.x,
+                        right: player.x + player.width,
+                        top: player.y,
+                        bottom: player.y + player.height
+                    };
+                    
+                    if (playerRect.right > platformRect.left &&
+                        playerRect.left < platformRect.right &&
+                        playerRect.bottom > platformRect.top &&
+                        playerRect.top < platformRect.bottom) {
+                        
+                        // Landing on top
+                        if (player.velocityY > 0 && playerRect.bottom - platformRect.top <= player.velocityY + 5) {
+                            player.y = platformRect.top - player.height;
+                            player.velocityY = 0;
+                            player.isOnGround = true;
+                        }
+                        // Hitting from below
+                        else if (player.velocityY < 0 && platformRect.bottom - playerRect.top <= -player.velocityY + 5) {
+                            player.y = platformRect.bottom;
+                            player.velocityY = 0;
+                        }
+                    }
                 }
-
-                const playerRect = player.getBoundingClientRect();
-                const enemyRect = enemy.getBoundingClientRect();
-
-                if (
-                    playerRect.left < enemyRect.right &&
-                    playerRect.right > enemyRect.left &&
-                    playerRect.top < enemyRect.bottom &&
-                    playerRect.bottom > enemyRect.top
-                ) {
+            });
+            
+            // Coin collisions
+            coins.forEach((coin, index) => {
+                if (checkCollision(playerElement, coin)) {
+                    coin.remove();
+                    coins.splice(index, 1);
+                    score += 10;
+                    updateScore();
+                    playCoinSound();
+                }
+            });
+            
+            // Enemy collisions
+            enemies.forEach((enemy, index) => {
+                if (checkCollision(playerElement, enemy)) {
+                    if (player.velocityY > 0 && player.y + player.height < enemy.offsetTop + 20) {
+                        enemy.remove();
+                        enemies.splice(index, 1);
+                        score += 20;
+                        updateScore();
+                        player.velocityY = player.jumpForce / 1.5;
+                        playStompSound();
+                    } else {
+                        gameOver();
+                    }
+                }
+                // Move enemies
+                const direction = enemy.dataset.direction === 'left' ? -1 : 1;
+                enemy.style.left = (enemy.offsetLeft + direction * 2 - gameSpeed) + 'px';
+                if (enemy.offsetLeft < 0 || enemy.offsetLeft > window.innerWidth - 40) {
+                    enemy.dataset.direction = enemy.dataset.direction === 'left' ? 'right' : 'left';
+                }
+            });
+            
+            // Spike collisions
+            spikes.forEach((spike, index) => {
+                if (checkCollision(playerElement, spike)) {
                     gameOver();
                 }
             });
+            
+            // Move elements
+            platforms.forEach(platform => {
+                if (platform !== ground) {
+                    platform.style.left = (platform.offsetLeft - gameSpeed) + 'px';
+                    if (platform.offsetLeft + platform.offsetWidth < 0) {
+                        platform.remove();
+                        platforms.splice(platforms.indexOf(platform), 1);
+                    }
+                }
+            });
+            
+            coins.forEach(coin => {
+                coin.style.left = (coin.offsetLeft - gameSpeed) + 'px';
+                if (coin.offsetLeft + coin.offsetWidth < 0) {
+                    coin.remove();
+                    coins.splice(coins.indexOf(coin), 1);
+                }
+            });
+            
+            enemies.forEach(enemy => {
+                if (enemy.offsetLeft + enemy.offsetWidth < 0) {
+                    enemy.remove();
+                    enemies.splice(enemies.indexOf(enemy), 1);
+                }
+            });
+            
+            spikes.forEach(spike => {
+                spike.style.left = (spike.offsetLeft - gameSpeed) + 'px';
+                if (spike.offsetLeft + spike.offsetWidth < 0) {
+                    spike.remove();
+                    spikes.splice(spikes.indexOf(spike), 1);
+                }
+            });
+            
+            clouds.forEach(cloud => {
+                cloud.style.left = (cloud.offsetLeft - gameSpeed / 2) + 'px';
+                if (cloud.offsetLeft + cloud.offsetWidth < 0) {
+                    cloud.remove();
+                    clouds.splice(clouds.indexOf(cloud), 1);
+                }
+            });
+            
+            playerElement.style.left = player.x + 'px';
+            playerElement.style.top = player.y + 'px';
+            
+            if (score % 100 === 0 && score > 0) {
+                gameSpeed = 4 + Math.floor(score / 100) * 0.5;
+            }
         }
-
-        function spawnEnemies() {
-            enemySpawnInterval = setInterval(() => {
-                if (!isGameRunning) return;
-
-                const enemyType = Math.random();
-                let isFast = false;
-                let isDuplicated = false;
-
-                if (enemyType < 0.3) {
-                    isFast = true;
-                } else if (enemyType < 0.6) {
-                    isDuplicated = true;
+        
+        // Spawn elements
+        function spawnElements() {
+            if (!gameRunning) return;
+            
+            if (Math.random() > 0.3) {
+                const platformWidth = Math.random() * 150 + 100;
+                const platformHeight = 20;
+                const platformX = window.innerWidth;
+                const platformY = window.innerHeight - 60 - (Math.random() * 200 + 50);
+                
+                const platform = createPlatform(platformX, platformY, platformWidth, platformHeight);
+                
+                if (Math.random() > 0.5) {
+                    const coinCount = Math.floor(Math.random() * 3) + 1;
+                    for (let i = 0; i < coinCount; i++) {
+                        const coinX = platformX + (i * 30) + 10;
+                        const coinY = platformY - 30;
+                        createCoin(coinX, coinY);
+                    }
                 }
-
-                const enemy = document.createElement('div');
-                enemy.classList.add('enemy');
-                enemy.style.right = '0%';
-
-                if (isFast) {
-                    enemy.classList.add('fast');
-                    enemy.dataset.speed = '0.8';
-                    console.log('Spawned fast enemy');
-                } else {
-                    enemy.dataset.speed = '0.5';
-                    console.log('Spawned normal enemy');
+                
+                if (Math.random() > 0.7) {
+                    const spikeCount = Math.floor(Math.random() * 2) + 1;
+                    for (let i = 0; i < spikeCount; i++) {
+                        const spikeX = platformX + (i * 30) + 10;
+                        const spikeY = platformY - 20;
+                        createSpike(spikeX, spikeY);
+                    }
                 }
-
-                const enemyImg = document.createElement('img');
-                enemyImg.src = 'enemy-image.jpg';
-                enemyImg.alt = 'Enemy';
-                enemyImg.onerror = () => console.error('Failed to load enemy image');
-                enemy.appendChild(enemyImg);
-                gameContainer.appendChild(enemy);
-                enemies.push(enemy);
-
-                if (isDuplicated) {
-                    const enemyTop = document.createElement('div');
-                    enemyTop.classList.add('enemy', 'duplicated-top');
-                    enemyTop.style.right = '0%';
-                    enemyTop.dataset.speed = enemy.dataset.speed;
-                    const enemyTopImg = document.createElement('img');
-                    enemyTopImg.src = 'enemy-image.jpg';
-                    enemyTopImg.alt = 'Enemy';
-                    enemyTopImg.onerror = () => console.error('Failed to load enemy image');
-                    enemyTop.appendChild(enemyTopImg);
-                    gameContainer.appendChild(enemyTop);
-                    enemies.push(enemyTop);
-                    console.log('Spawned duplicated enemy');
-                }
-            }, 1500);
+            }
+            
+            if (Math.random() > 0.6) {
+                const enemyX = window.innerWidth;
+                const enemyY = window.innerHeight - 60 - 40;
+                createEnemy(enemyX, enemyY);
+            }
         }
-
+        
+        function createPlatform(x, y, width, height) {
+            const platform = document.createElement('div');
+            platform.className = 'platform';
+            platform.style.left = x + 'px';
+            platform.style.top = y + 'px';
+            platform.style.width = width + 'px';
+            platform.style.height = height + 'px';
+            gameContainer.appendChild(platform);
+            platforms.push(platform);
+            return platform;
+        }
+        
+        function createCoin(x, y) {
+            const coin = document.createElement('div');
+            coin.className = 'coin';
+            coin.style.left = x + 'px';
+            coin.style.top = y + 'px';
+            gameContainer.appendChild(coin);
+            coins.push(coin);
+            return coin;
+        }
+        
+        function createEnemy(x, y) {
+            const enemy = document.createElement('div');
+            enemy.className = 'enemy';
+            enemy.style.left = x + 'px';
+            enemy.style.top = y + 'px';
+            enemy.dataset.direction = 'left';
+            gameContainer.appendChild(enemy);
+            enemies.push(enemy);
+            return enemy;
+        }
+        
+        function createSpike(x, y) {
+            const spike = document.createElement('div');
+            spike.className = 'spike';
+            spike.style.left = x + 'px';
+            spike.style.top = y + 'px';
+            gameContainer.appendChild(spike);
+            spikes.push(spike);
+            return spike;
+        }
+        
+        function createCloud() {
+            const cloud = document.createElement('div');
+            cloud.className = 'cloud';
+            const size = Math.random() * 50 + 50;
+            const x = window.innerWidth;
+            const y = Math.random() * (window.innerHeight / 3);
+            cloud.style.left = x + 'px';
+            cloud.style.top = y + 'px';
+            cloud.style.width = size + 'px';
+            cloud.style.height = size / 2 + 'px';
+            gameContainer.appendChild(cloud);
+            clouds.push(cloud);
+            return cloud;
+        }
+        
+        function checkCollision(element1, element2) {
+            const rect1 = element1.getBoundingClientRect();
+            const rect2 = element2.getBoundingClientRect();
+            return !(
+                rect1.right < rect2.left || 
+                rect1.left > rect2.right || 
+                rect1.bottom < rect2.top || 
+                rect1.top > rect2.bottom
+            );
+        }
+        
+        function updateScore() {
+            scoreDisplay.textContent = `Score: ${score}`;
+        }
+        
         function gameOver() {
-            console.log('Game over');
-            isGameRunning = false;
-            clearInterval(gameLoop);
-            clearInterval(enemySpawnInterval);
-            gameOverScreen.style.opacity = 1;
-            gameOverScreen.style.pointerEvents = 'auto';
-            finalScoreDisplay.textContent = score;
+            gameRunning = false;
+            clearInterval(gameInterval);
+            clearInterval(spawnInterval);
+            clearInterval(cloudInterval);
+            finalScoreDisplay.textContent = `Score: ${score}`;
+            gameOverScreen.style.display = 'flex';
+            playGameOverSound();
         }
-
-        function resetGame() {
-            console.log('Game reset');
-            isGameRunning = false;
-            clearInterval(gameLoop);
-            clearInterval(enemySpawnInterval);
-            gameOverScreen.style.opacity = 0;
-            gameOverScreen.style.pointerEvents = 'none';
-            positionY = 20;
-            velocityY = 0;
-            player.style.bottom = positionY + '%';
-            enemies.forEach(enemy => enemy.remove());
-            enemies = [];
-            playButton.style.display = 'block';
-            score = 0;
-            scoreDisplay.textContent = 'Score: ' + score;
-            message.style.opacity = 1;
+        
+        function playCoinSound() {
+            const audio = new Audio('data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU...');
+            audio.volume = 0.2;
+            audio.play().catch(e => {});
         }
+        
+        function playStompSound() {
+            const audio = new Audio('data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU...');
+            audio.volume = 0.2;
+            audio.play().catch(e => {});
+        }
+        
+        function playGameOverSound() {
+            const audio = new Audio('data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU...');
+            audio.volume = 0.2;
+            audio.play().catch(e => {});
+        }
+        
+        document.addEventListener('keydown', (e) => {
+            if (!gameRunning) return;
+            switch(e.key) {
+                case 'ArrowLeft':
+                    player.velocityX = -player.speed;
+                    break;
+                case 'ArrowRight':
+                    player.velocityX = player.speed;
+                    break;
+                case ' ':
+                case 'ArrowUp':
+                    if (player.isOnGround) {
+                        player.velocityY = player.jumpForce;
+                        player.isOnGround = false;
+                        playerElement.classList.add('jump');
+                        setTimeout(() => {
+                            playerElement.classList.remove('jump');
+                        }, 500);
+                    }
+                    break;
+            }
+        });
+        
+        document.addEventListener('keyup', (e) => {
+            if (!gameRunning) return;
+            switch(e.key) {
+                case 'ArrowLeft':
+                case 'ArrowRight':
+                    player.velocityX = 0;
+                    break;
+            }
+        });
+        
+        startBtn.addEventListener('click', () => {
+            startScreen.style.display = 'none';
+            initGame();
+        });
+        
+        restartBtn.addEventListener('click', () => {
+            gameOverScreen.style.display = 'none';
+            initGame();
+        });
+        
+        playerElement.style.left = player.x + 'px';
+        playerElement.style.top = player.y + 'px';
     </script>
 </body>
 </html>
