@@ -33,6 +33,7 @@
             height: clamp(40px, 6vh, 60px);
             background: linear-gradient(to bottom, #4CAF50 0%, #2E7D32 100%);
             transition: background 1s ease;
+            z-index: 1;
         }
         
         #ground.night {
@@ -92,6 +93,7 @@
             border-radius: 5px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
             transition: background 1s ease;
+            z-index: 2;
         }
         
         .platform.night {
@@ -177,7 +179,7 @@
             position: absolute;
             bottom: 10px;
             width: 100%;
-            display: none; /* Hidden by default, shown on mobile */
+            display: none;
             z-index: 10;
             justify-content: space-between;
             padding: 0 20px;
@@ -231,8 +233,8 @@
         <div id="score-display">Score: 0</div>
         
         <div id="start-screen">
-            <h1 class="text-4xl mb-8">Cute but need to Eliminated</h1>
-            <p class="mb-4">Desktop: Use arrow keys to move, Space to jump</p>
+            <h1 class="text-4xl mb-8">Mario-Inspired Platformer</h1>
+            <p class="mb-4">Cute but need to be Eliminated: </p>
             <p class="mb-8">Mobile: Use on-screen buttons</p>
             <button id="start-btn" class="btn">Start Game</button>
         </div>
@@ -307,40 +309,427 @@
         
         // Initialize game
         function initGame() {
-            platforms.forEach(platform => platform.remove());
-            coins.forEach(coin => coin.remove());
-            enemies.forEach(enemy => enemy.remove());
-            spikes.forEach(spike => spike.remove());
-            plants.forEach(plant => plant.remove());
-            clouds.forEach(cloud => cloud.remove());
+            try {
+                console.log("Initializing game...");
+                platforms.forEach(platform => platform.remove());
+                coins.forEach(coin => coin.remove());
+                enemies.forEach(enemy => enemy.remove());
+                spikes.forEach(spike => spike.remove());
+                plants.forEach(plant => plant.remove());
+                clouds.forEach(cloud => cloud.remove());
+                
+                platforms = [];
+                coins = [];
+                enemies = [];
+                spikes = [];
+                plants = [];
+                clouds = [];
+                
+                player.x = 100;
+                player.y = window.innerHeight - ground.offsetHeight - player.height;
+                player.velocityX = 0;
+                player.velocityY = 0;
+                player.isOnGround = false;
+                player.onPlatform = null;
+                player.isInvulnerable = false;
+                playerElement.classList.remove('invulnerable');
+                if (invulnerabilityTimer) clearTimeout(invulnerabilityTimer);
+                
+                score = 0;
+                gameSpeed = 4;
+                lastPlatformX = 0;
+                isNight = false;
+                updateScore();
+                updateDayNight();
+                
+                createPlatform(0, window.innerHeight - ground.offsetHeight, window.innerWidth, ground.offsetHeight);
+                
+                for (let i = 0; i < 5; i++) {
+                    createCloud();
+                }
+                
+                gameRunning = true;
+                gameInterval = setInterval(updateGame, 20);
+                spawnInterval = setInterval(spawnElements, 1500);
+                cloudInterval = setInterval(createCloud, 5000);
+                console.log("Game initialized successfully!");
+            } catch (error) {
+                console.error("Error initializing game:", error);
+            }
+        }
+        
+        // Update game state
+        function updateGame() {
+            try {
+                player.velocityY += player.gravity;
+                player.x += player.velocityX;
+                player.y += player.velocityY;
+                
+                player.onPlatform = null;
+                
+                if (player.y + player.height >= window.innerHeight - ground.offsetHeight) {
+                    player.y = window.innerHeight - ground.offsetHeight - player.height;
+                    player.velocityY = 0;
+                    player.isOnGround = true;
+                    player.onPlatform = ground;
+                } else {
+                    player.isOnGround = false;
+                }
+                
+                platforms.forEach(platform => {
+                    if (platform !== ground) {
+                        const platformRect = platform.getBoundingClientRect();
+                        const playerRect = {
+                            left: player.x,
+                            right: player.x + player.width,
+                            top: player.y,
+                            bottom: player.y + player.height
+                        };
+                        
+                        if (playerRect.right > platformRect.left &&
+                            playerRect.left < platformRect.right &&
+                            playerRect.bottom > platformRect.top &&
+                            playerRect.top < platformRect.bottom) {
+                            
+                            if (player.velocityY > 0 && playerRect.bottom - platformRect.top <= player.velocityY + 5) {
+                                player.y = platformRect.top - player.height;
+                                player.velocityY = 0;
+                                player.isOnGround = true;
+                                player.onPlatform = platform;
+                            } else if (player.velocityY < 0 && platformRect.bottom - playerRect.top <= -player.velocityY + 5) {
+                                player.y = platformRect.bottom;
+                                player.velocityY = 0;
+                            } else if (playerRect.right > platformRect.left && playerRect.left < platformRect.right) {
+                                if (playerRect.right - platformRect.left < 10) {
+                                    player.x = platformRect.left - player.width;
+                                    player.velocityX = 0;
+                                } else if (platformRect.right - playerRect.left < 10) {
+                                    player.x = platformRect.right;
+                                    player.velocityX = 0;
+                                }
+                            }
+                        }
+                    }
+                });
+                
+                coins.forEach((coin, index) => {
+                    if (checkCollision(playerElement, coin)) {
+                        coin.remove();
+                        coins.splice(index, 1);
+                        score += 10;
+                        updateScore();
+                        playCoinSound();
+                    }
+                });
+                
+                plants.forEach((plant, index) => {
+                    if (checkCollision(playerElement, plant)) {
+                        plant.remove();
+                        plants.splice(index, 1);
+                        activateInvulnerability();
+                    }
+                });
+                
+                enemies.forEach((enemy, index) => {
+                    if (checkCollision(playerElement, enemy)) {
+                        if (player.velocityY > 0 && player.y + player.height < enemy.offsetTop + 20) {
+                            enemy.remove();
+                            enemies.splice(index, 1);
+                            score += 20;
+                            updateScore();
+                            player.velocityY = player.jumpForce / 1.5;
+                            playStompSound();
+                        } else if (!player.isInvulnerable) {
+                            gameOver();
+                        }
+                    }
+                    const direction = enemy.dataset.direction === 'left' ? -1 : 1;
+                    enemy.style.left = (enemy.offsetLeft + direction * 2 - gameSpeed) + 'px';
+                    if (enemy.offsetLeft < 0 || enemy.offsetLeft > window.innerWidth - enemy.offsetWidth) {
+                        enemy.dataset.direction = enemy.dataset.direction === 'left' ? 'right' : 'left';
+                    }
+                });
+                
+                spikes.forEach((spike, index) => {
+                    if (checkCollision(playerElement, spike) && !player.isInvulnerable) {
+                        gameOver();
+                    }
+                });
+                
+                platforms.forEach(platform => {
+                    if (platform !== ground) {
+                        platform.style.left = (platform.offsetLeft - gameSpeed) + 'px';
+                        if (platform.offsetLeft + platform.offsetWidth < 0) {
+                            platform.remove();
+                            platforms.splice(platforms.indexOf(platform), 1);
+                        }
+                    }
+                });
+                
+                coins.forEach(coin => {
+                    coin.style.left = (coin.offsetLeft - gameSpeed) + 'px';
+                    if (coin.offsetLeft + coin.offsetWidth < 0) {
+                        coin.remove();
+                        coins.splice(coins.indexOf(coin), 1);
+                    }
+                });
+                
+                enemies.forEach(enemy => {
+                    if (enemy.offsetLeft + enemy.offsetWidth < 0) {
+                        enemy.remove();
+                        enemies.splice(enemies.indexOf(enemy), 1);
+                    }
+                });
+                
+                spikes.forEach(spike => {
+                    spike.style.left = (spike.offsetLeft - gameSpeed) + 'px';
+                    if (spike.offsetLeft + spike.offsetWidth < 0) {
+                        spike.remove();
+                        spikes.splice(spikes.indexOf(spike), 1);
+                    }
+                });
+                
+                plants.forEach(plant => {
+                    plant.style.left = (plant.offsetLeft - gameSpeed) + 'px';
+                    if (plant.offsetLeft + plant.offsetWidth < 0) {
+                        plant.remove();
+                        plants.splice(plants.indexOf(plant), 1);
+                    }
+                });
+                
+                clouds.forEach(cloud => {
+                    cloud.style.left = (cloud.offsetLeft - gameSpeed / 2) + 'px';
+                    if (cloud.offsetLeft + cloud.offsetWidth < 0) {
+                        cloud.remove();
+                        clouds.splice(clouds.indexOf(cloud), 1);
+                    }
+                });
+                
+                playerElement.style.left = player.x + 'px';
+                playerElement.style.top = player.y + 'px';
+                
+                if (score % 100 === 0 && score > 0) {
+                    gameSpeed = 4 + Math.floor(score / 100) * 0.5;
+                }
+            } catch (error) {
+                console.error("Error in updateGame:", error);
+            }
+        }
+        
+        // Spawn elements
+        function spawnElements() {
+            if (!gameRunning) return;
             
-            platforms = [];
-            coins = [];
-            enemies = [];
-            spikes = [];
-            plants = [];
-            clouds = [];
+            if (lastPlatformX < window.innerWidth - 300) {
+                if (Math.random() > 0.3) {
+                    const platformWidth = Math.random() * 150 + 100;
+                    const platformHeight = 20;
+                    const platformX = window.innerWidth;
+                    const platformY = window.innerHeight - ground.offsetHeight - (Math.random() * 200 + 100);
+                    
+                    let canSpawn = true;
+                    for (let platform of platforms) {
+                        if (platform !== ground) {
+                            const existingY = platform.offsetTop;
+                            if (Math.abs(platformY - existingY) < 50) {
+                                canSpawn = false;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    if (canSpawn) {
+                        const platform = createPlatform(platformX, platformY, platformWidth, platformHeight);
+                        lastPlatformX = platformX;
+                        
+                        if (Math.random() > 0.5) {
+                            const coinCount = Math.floor(Math.random() * 3) + 1;
+                            for (let i = 0; i < coinCount; i++) {
+                                const coinX = platformX + (i * 30) + 10;
+                                const coinY = platformY - 30;
+                                createCoin(coinX, coinY);
+                            }
+                        }
+                        
+                        if (Math.random() > 0.7) {
+                            const spikeCount = Math.floor(Math.random() * 2) + 1;
+                            for (let i = 0; i < spikeCount; i++) {
+                                const spikeX = platformX + (i * 30) + 10;
+                                const spikeY = platformY - 20;
+                                createSpike(spikeX, spikeY);
+                            }
+                        }
+                        
+                        if (Math.random() > 0.9) {
+                            const plantX = platformX + 30;
+                            const plantY = platformY - 30;
+                            createPlant(plantX, plantY);
+                        }
+                    }
+                }
+            }
             
-            player.x = 100;
-            player.y = window.innerHeight - ground.offsetHeight - player.height;
-            player.velocityX = 0;
-            player.velocityY = 0;
-            player.isOnGround = false;
-            player.onPlatform = null;
-            player.isInvulnerable = false;
-            playerElement.classList.remove('invulnerable');
-            if (invulnerabilityTimer) clearTimeout(invulnerabilityTimer);
-            
-            score = 0;
-            gameSpeed = 4;
-            lastPlatformX = 0;
-            isNight = false;
-            updateScore();
+            if (Math.random() > 0.9) {
+                const enemyX = window.innerWidth;
+                const enemyY = window.innerHeight - ground.offsetHeight - clamp(30, 4 * window.innerWidth / 100, 40);
+                createEnemy(enemyX, enemyY);
+            }
+        }
+        
+        function createPlatform(x, y, width, height) {
+            const platform = document.createElement('div');
+            platform.className = 'platform';
+            platform.style.left = x + 'px';
+            platform.style.top = y + 'px';
+            platform.style.width = width + 'px';
+            platform.style.height = height + 'px';
+            if (isNight) platform.classList.add('night');
+            gameContainer.appendChild(platform);
+            platforms.push(platform);
+            return platform;
+        }
+        
+        function createCoin(x, y) {
+            const coin = document.createElement('div');
+            coin.className = 'coin';
+            coin.style.left = x + 'px';
+            coin.style.top = y + 'px';
+            gameContainer.appendChild(coin);
+            coins.push(coin);
+            return coin;
+        }
+        
+        function createEnemy(x, y) {
+            const enemy = document.createElement('div');
+            enemy.className = 'enemy';
+            enemy.style.left = x + 'px';
+            enemy.style.top = y + 'px';
+            enemy.dataset.direction = 'left';
+            gameContainer.appendChild(enemy);
+            enemies.push(enemy);
+            return enemy;
+        }
+        
+        function createSpike(x, y) {
+            const spike = document.createElement('div');
+            spike.className = 'spike';
+            spike.style.left = x + 'px';
+            spike.style.top = y + 'px';
+            gameContainer.appendChild(spike);
+            spikes.push(spike);
+            return spike;
+        }
+        
+        function createPlant(x, y) {
+            const plant = document.createElement('div');
+            plant.className = 'plant';
+            plant.style.left = x + 'px';
+            plant.style.top = y + 'px';
+            gameContainer.appendChild(plant);
+            plants.push(plant);
+            return plant;
+        }
+        
+        function createCloud() {
+            const cloud = document.createElement('div');
+            cloud.className = 'cloud';
+            const size = Math.random() * 50 + 50;
+            const x = window.innerWidth;
+            const y = Math.random() * (window.innerHeight / 3);
+            cloud.style.left = x + 'px';
+            cloud.style.top = y + 'px';
+            cloud.style.width = size + 'px';
+            cloud.style.height = size / 2 + 'px';
+            if (isNight) cloud.classList.add('night');
+            gameContainer.appendChild(cloud);
+            clouds.push(cloud);
+            return cloud;
+        }
+        
+        function checkCollision(element1, element2) {
+            const rect1 = element1.getBoundingClientRect();
+            const rect2 = element2.getBoundingClientRect();
+            return !(
+                rect1.right < rect2.left || 
+                rect1.left > rect2.right || 
+                rect1.bottom < rect2.top || 
+                rect1.top > rect2.bottom
+            );
+        }
+        
+        function updateScore() {
+            scoreDisplay.textContent = `Score: ${score}`;
             updateDayNight();
-            
-            createPlatform(0, window.innerHeight - ground.offsetHeight, window.innerWidth, ground.offsetHeight);
-            
-            for (let i =  setTimeout(() => {
+        }
+        
+        function updateDayNight() {
+            const shouldBeNight = score >= 200 && score < 400;
+            if (shouldBeNight !== isNight) {
+                isNight = shouldBeNight;
+                document.body.classList.toggle('night', isNight);
+                ground.classList.toggle('night', isNight);
+                platforms.forEach(platform => platform.classList.toggle('night', isNight));
+                clouds.forEach(cloud => cloud.classList.toggle('night', isNight));
+            }
+        }
+        
+        function activateInvulnerability() {
+            player.isInvulnerable = true;
+            playerElement.classList.add('invulnerable');
+            if (invulnerabilityTimer) clearTimeout(invulnerabilityTimer);
+            invulnerabilityTimer = setTimeout(() => {
+                player.isInvulnerable = false;
+                playerElement.classList.remove('invulnerable');
+                invulnerabilityTimer = null;
+            }, 5000);
+        }
+        
+        function gameOver() {
+            gameRunning = false;
+            clearInterval(gameInterval);
+            clearInterval(spawnInterval);
+            clearInterval(cloudInterval);
+            finalScoreDisplay.textContent = `Score: ${score}`;
+            gameOverScreen.style.display = 'flex';
+            playGameOverSound();
+        }
+        
+        function playCoinSound() {
+            const audio = new Audio('data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU...');
+            audio.volume = 0.2;
+            audio.play().catch(e => console.error("Error playing coin sound:", e));
+        }
+        
+        function playStompSound() {
+            const audio = new Audio('data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU...');
+            audio.volume = 0.2;
+            audio.play().catch(e => console.error("Error playing stomp sound:", e));
+        }
+        
+        function playGameOverSound() {
+            const audio = new Audio('data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU...');
+            audio.volume = 0.2;
+            audio.play().catch(e => console.error("Error playing game over sound:", e));
+        }
+        
+        // Desktop keyboard controls
+        document.addEventListener('keydown', (e) => {
+            if (!gameRunning) return;
+            switch(e.key) {
+                case 'ArrowLeft':
+                    player.velocityX = -player.speed;
+                    break;
+                case 'ArrowRight':
+                    player.velocityX = player.speed;
+                    break;
+                case ' ':
+                case 'ArrowUp':
+                    if (player.isOnGround) {
+                        player.velocityY = player.jumpForce;
+                        player.isOnGround = false;
+                        player.onPlatform = null;
+                        playerElement.classList.add('jump');
+                        setTimeout(() => {
                             playerElement.classList.remove('jump');
                         }, 500);
                     }
@@ -359,39 +748,18 @@
         });
         
         // Touch controls for mobile
-        let leftTouchActive = false;
-        let rightTouchActive = false;
+        let touchStates = {
+            left: false,
+            right: false,
+            jump: false
+        };
         
-        leftBtn.addEventListener('touchstart', (e) => {
+        function handleTouchStart(e, direction) {
             e.preventDefault();
             if (!gameRunning) return;
-            leftTouchActive = true;
-            player.velocityX = -player.speed;
-        });
-        
-        leftBtn.addEventListener('touchend', (e) => {
-            e.preventDefault();
-            leftTouchActive = false;
-            if (!rightTouchActive) player.velocityX = 0;
-        });
-        
-        rightBtn.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            if (!gameRunning) return;
-            rightTouchActive = true;
-            player.velocityX = player.speed;
-        });
-        
-        rightBtn.addEventListener('touchend', (e) => {
-            e.preventDefault();
-            rightTouchActive = false;
-            if (!leftTouchActive) player.velocityX = 0;
-        });
-        
-        jumpBtn.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            if (!gameRunning) return;
-            if (player.isOnGround) {
+            touchStates[direction] = true;
+            updateTouchMovement();
+            if (direction === 'jump' && player.isOnGround) {
                 player.velocityY = player.jumpForce;
                 player.isOnGround = false;
                 player.onPlatform = null;
@@ -400,23 +768,72 @@
                     playerElement.classList.remove('jump');
                 }, 500);
             }
-        });
+        }
+        
+        function handleTouchEnd(e, direction) {
+            e.preventDefault();
+            touchStates[direction] = false;
+            updateTouchMovement();
+        }
+        
+        function updateTouchMovement() {
+            if (touchStates.left && !touchStates.right) {
+                player.velocityX = -player.speed;
+            } else if (touchStates.right && !touchStates.left) {
+                player.velocityX = player.speed;
+            } else {
+                player.velocityX = 0;
+            }
+        }
+        
+        leftBtn.addEventListener('touchstart', (e) => handleTouchStart(e, 'left'));
+        leftBtn.addEventListener('touchend', (e) => handleTouchEnd(e, 'left'));
+        rightBtn.addEventListener('touchstart', (e) => handleTouchStart(e, 'right'));
+        rightBtn.addEventListener('touchend', (e) => handleTouchEnd(e, 'right'));
+        jumpBtn.addEventListener('touchstart', (e) => handleTouchStart(e, 'jump'));
+        jumpBtn.addEventListener('touchend', (e) => handleTouchEnd(e, 'jump'));
+        
+        // Also support mouse clicks for touch buttons (for testing on desktop)
+        leftBtn.addEventListener('mousedown', (e) => handleTouchStart(e, 'left'));
+        leftBtn.addEventListener('mouseup', (e) => handleTouchEnd(e, 'left'));
+        rightBtn.addEventListener('mousedown', (e) => handleTouchStart(e, 'right'));
+        rightBtn.addEventListener('mouseup', (e) => handleTouchEnd(e, 'right'));
+        jumpBtn.addEventListener('mousedown', (e) => handleTouchStart(e, 'jump'));
+        jumpBtn.addEventListener('mouseup', (e) => handleTouchEnd(e, 'jump'));
         
         // Prevent default touch behavior on buttons
         [leftBtn, rightBtn, jumpBtn].forEach(btn => {
             btn.addEventListener('touchmove', (e) => e.preventDefault());
         });
         
+        // Start and Restart buttons
         startBtn.addEventListener('click', () => {
+            console.log("Start button clicked");
+            startScreen.style.display = 'none';
+            initGame();
+        });
+        
+        startBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            console.log("Start button touched");
             startScreen.style.display = 'none';
             initGame();
         });
         
         restartBtn.addEventListener('click', () => {
+            console.log("Restart button clicked");
             gameOverScreen.style.display = 'none';
             initGame();
         });
         
+        restartBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            console.log("Restart button touched");
+            gameOverScreen.style.display = 'none';
+            initGame();
+        });
+        
+        // Initial position
         playerElement.style.left = player.x + 'px';
         playerElement.style.top = player.y + 'px';
     </script>
