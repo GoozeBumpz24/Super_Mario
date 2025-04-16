@@ -154,7 +154,7 @@
         <div id="score-display">Score: 0</div>
         
         <div id="start-screen">
-            <h1 class="text-4xl mb-8">Jasfer as a Super Mario</h1>
+            <h1 class="text-4xl mb-8">Mario-Inspired Platformer</h1>
             <p class="mb-4">Use arrow keys to move</p>
             <p class="mb-8">Space to jump</p>
             <button id="start-btn" class="btn">Start Game</button>
@@ -182,6 +182,7 @@
         let gameInterval;
         let spawnInterval;
         let cloudInterval;
+        let lastPlatformX = 0; // To track the last platform's position
         
         // DOM elements
         const gameContainer = document.getElementById('game-container');
@@ -202,10 +203,11 @@
             height: 60,
             velocityX: 0,
             velocityY: 0,
-            gravity: 1,
+            gravity: 0.8,
             jumpForce: -15,
             speed: 5,
-            isOnGround: false
+            isOnGround: false,
+            onPlatform: null // Track which platform the player is on
         };
         
         // Initialize game
@@ -227,9 +229,11 @@
             player.velocityX = 0;
             player.velocityY = 0;
             player.isOnGround = false;
+            player.onPlatform = null;
             
             score = 0;
             gameSpeed = 4;
+            lastPlatformX = 0;
             updateScore();
             
             createPlatform(0, window.innerHeight - 60, window.innerWidth, 60);
@@ -250,11 +254,17 @@
             player.x += player.velocityX;
             player.y += player.velocityY;
             
+            // Reset onPlatform status
+            player.onPlatform = null;
+            
             // Ground collision
-            if (player.y + player.height > window.innerHeight - 60) {
+            if (player.y + player.height >= window.innerHeight - 60) {
                 player.y = window.innerHeight - 60 - player.height;
                 player.velocityY = 0;
                 player.isOnGround = true;
+                player.onPlatform = ground;
+            } else {
+                player.isOnGround = false;
             }
             
             // Platform collisions
@@ -278,11 +288,22 @@
                             player.y = platformRect.top - player.height;
                             player.velocityY = 0;
                             player.isOnGround = true;
+                            player.onPlatform = platform;
                         }
                         // Hitting from below
                         else if (player.velocityY < 0 && platformRect.bottom - playerRect.top <= -player.velocityY + 5) {
                             player.y = platformRect.bottom;
                             player.velocityY = 0;
+                        }
+                        // Hitting from sides
+                        else if (playerRect.right > platformRect.left && playerRect.left < platformRect.right) {
+                            if (playerRect.right - platformRect.left < 10) {
+                                player.x = platformRect.left - player.width;
+                                player.velocityX = 0;
+                            } else if (platformRect.right - playerRect.left < 10) {
+                                player.x = platformRect.right;
+                                player.velocityX = 0;
+                            }
                         }
                     }
                 }
@@ -382,29 +403,47 @@
         function spawnElements() {
             if (!gameRunning) return;
             
-            if (Math.random() > 0.3) {
-                const platformWidth = Math.random() * 150 + 100;
-                const platformHeight = 20;
-                const platformX = window.innerWidth;
-                const platformY = window.innerHeight - 60 - (Math.random() * 200 + 50);
-                
-                const platform = createPlatform(platformX, platformY, platformWidth, platformHeight);
-                
-                if (Math.random() > 0.5) {
-                    const coinCount = Math.floor(Math.random() * 3) + 1;
-                    for (let i = 0; i < coinCount; i++) {
-                        const coinX = platformX + (i * 30) + 10;
-                        const coinY = platformY - 30;
-                        createCoin(coinX, coinY);
+            // Only spawn a new platform if the last one is far enough
+            if (lastPlatformX < window.innerWidth - 300) {
+                if (Math.random() > 0.3) {
+                    const platformWidth = Math.random() * 150 + 100;
+                    const platformHeight = 20;
+                    const platformX = window.innerWidth;
+                    const platformY = window.innerHeight - 60 - (Math.random() * 200 + 100);
+                    
+                    // Ensure platforms don't overlap vertically
+                    let canSpawn = true;
+                    for (let platform of platforms) {
+                        if (platform !== ground) {
+                            const existingY = platform.offsetTop;
+                            if (Math.abs(platformY - existingY) < 50) {
+                                canSpawn = false;
+                                break;
+                            }
+                        }
                     }
-                }
-                
-                if (Math.random() > 0.7) {
-                    const spikeCount = Math.floor(Math.random() * 2) + 1;
-                    for (let i = 0; i < spikeCount; i++) {
-                        const spikeX = platformX + (i * 30) + 10;
-                        const spikeY = platformY - 20;
-                        createSpike(spikeX, spikeY);
+                    
+                    if (canSpawn) {
+                        const platform = createPlatform(platformX, platformY, platformWidth, platformHeight);
+                        lastPlatformX = platformX;
+                        
+                        if (Math.random() > 0.5) {
+                            const coinCount = Math.floor(Math.random() * 3) + 1;
+                            for (let i = 0; i < coinCount; i++) {
+                                const coinX = platformX + (i * 30) + 10;
+                                const coinY = platformY - 30;
+                                createCoin(coinX, coinY);
+                            }
+                        }
+                        
+                        if (Math.random() > 0.7) {
+                            const spikeCount = Math.floor(Math.random() * 2) + 1;
+                            for (let i = 0; i < spikeCount; i++) {
+                                const spikeX = platformX + (i * 30) + 10;
+                                const spikeY = platformY - 20;
+                                createSpike(spikeX, spikeY);
+                            }
+                        }
                     }
                 }
             }
@@ -531,6 +570,7 @@
                     if (player.isOnGround) {
                         player.velocityY = player.jumpForce;
                         player.isOnGround = false;
+                        player.onPlatform = null;
                         playerElement.classList.add('jump');
                         setTimeout(() => {
                             playerElement.classList.remove('jump');
